@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Photos - {{ patient.name }}</title>
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* Container styling */
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Back to Patient List Link */
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            color: #4CAF50;
+            text-decoration: none;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid #4CAF50;
+            padding: 10px 20px;
+            border-radius: 30px;
+            transition: background-color 0.3s ease;
+        }
+
+        a:hover {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+
+        /* Gallery styling */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        /* Individual photo styling */
+        .photo-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .photo {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        /* Caption Styling */
+        .caption {
+            padding: 10px;
+            text-align: center;
+            background-color: #fff;
+            font-size: 1rem;
+            color: #555;
+            font-weight: bold;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.5); /* Transparent background */
+            color: white;
+            transition: background-color 0.3s ease;
+            padding: 10px;
+        }
+
+        /* Hover effects for photos */
+        .photo-container:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .photo-container:hover .caption {
+            background-color: rgba(0, 0, 0, 0.7); /* Darker background on hover */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Photos of {{ patient.name }}</h1>
+
+        <div class="gallery">
+            <!-- Loop through photos and corresponding labels -->
+            {% for photo in photos %}
+                <div class="photo-container">
+                    <img src="/uploads/{{ photo.filename }}" alt="{{ photo.filename }}" class="photo">
+                    <div class="caption">{{ photo.label }}</div> <!-- Display the corresponding label -->
+                </div>
+            {% endfor %}
+        </div>
+
+        <a href="/">Back to Patient List</a>
+    </div>
+
+</body>
+</html>

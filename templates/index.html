@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeri Foto Pasien</title>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+
+    <style>
+        /* Umum */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Kontainer utama */
+        .container {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        /* Formulir upload foto */
+        .form-container {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: inline-block;
+            color: #555;
+        }
+
+        .form-container input[type="text"],
+        .form-container input[type="file"],
+        .form-container button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .form-container input[type="text"] {
+            width: 100%;
+            background-color: #fff;
+            color: #555;
+        }
+
+        .form-container button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+
+        /* DataTable Styling */
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Gallery Styling */
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .photo {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Galeri Foto Pasien</h1>
+
+        <!-- Formulir Upload Foto -->
+        <div class="form-container">
+            <h2>Upload Foto</h2>
+            <form action="/upload" method="POST" enctype="multipart/form-data">
+                <label for="patient-name">Nama Pasien:</label>
+                <input type="text" id="patient-name" name="patient_name" required><br><br>
+
+                <label for="description">Keterangan:</label>
+                <input type="text" id="description" name="description" required><br><br>
+
+                <label for="panoramic-opg">Panoramic/OPG:</label>
+                <input type="file" id="panoramic-opg" name="panoramic_opg" accept="image/*" required><br><br>
+
+                <label for="foto-frontal">Foto Frontal:</label>
+                <input type="file" id="foto-frontal" name="foto_frontal" accept="image/*" required><br><br>
+
+                <label for="foto-senyum">Foto Senyum:</label>
+                <input type="file" id="foto-senyum" name="foto_senyum" accept="image/*" required><br><br>
+
+                <label for="foto-lateral">Foto Lateral:</label>
+                <input type="file" id="foto-lateral" name="foto_lateral" accept="image/*" required><br><br>
+
+                <label for="intra-oral-kanan">Intra Oral Kanan:</label>
+                <input type="file" id="intra-oral-kanan" name="intra_oral_kanan" accept="image/*" required><br><br>
+
+                <label for="intra-oral-depan">Intra Oral Depan:</label>
+                <input type="file" id="intra-oral-depan" name="intra_oral_depan" accept="image/*" required><br><br>
+
+                <label for="intra-oral-kiri">Intra Oral Kiri:</label>
+                <input type="file" id="intra-oral-kiri" name="intra_oral_kiri" accept="image/*" required><br><br>
+
+                <label for="oklusal-rahang-atas">Oklusal Rahang Atas:</label>
+                <input type="file" id="oklusal-rahang-atas" name="oklusal_rahang_atas" accept="image/*" required><br><br>
+
+                <label for="oklusal-rahang-bawah">Oklusal Rahang Bawah:</label>
+                <input type="file" id="oklusal-rahang-bawah" name="oklusal_rahang_bawah" accept="image/*" required><br><br>
+
+                <label for="foto-tambahan-lateral-kanan">FOTO Tambahan LATERAL KANAN:</label>
+                <input type="file" id="foto-tambahan-lateral-kanan" name="foto_tambahan_lateral_kanan" accept="image/*" required><br><br>
+
+                <label for="foto-tambahan-lateral-kanan-senyum">FOTO Tambahan LATERAL KANAN SENYUM:</label>
+                <input type="file" id="foto-tambahan-lateral-kanan-senyum" name="foto_tambahan_lateral_kanan_senyum" accept="image/*" required><br><br>
+
+                <label for="foto-tambahan-depan-bracket-behel">FOTO Tambahan DEPAN BRACKET BEHEL:</label>
+                <input type="file" id="foto-tambahan-depan-bracket-behel" name="foto_tambahan_depan_bracket_behel" accept="image/*" required><br><br>
+
+                <button type="submit">Upload</button>
+            </form>
+        </div>
+
+        <!-- Daftar Pasien - DataTable -->
+        <h2>List Pasien</h2>
+        <table id="patientsTable" class="display">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama Pasien</th>
+                    <th>Keterangan</th>
+                    <th>Foto</th>
+                </tr>
+            </thead>
+            <tbody id="patient-list">
+                <!-- List of patients will be dynamically loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- jQuery and DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        // Fetch the list of patients when the page loads
+        fetch('/patients')
+            .then(response => response.json())
+            .then(data => {
+                const patientList = document.getElementById('patient-list');
+                data.patients.forEach(patient => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${patient.id}</td>
+                        <td>${patient.name}</td>
+                        <td>${patient.category}</td>
+                        <td><a href="/patient/${patient.id}/photos">View Photos</a></td>
+                    `;
+                    patientList.appendChild(row);
+                });
+
+                // Initialize DataTable after the data is added
+                $('#patientsTable').DataTable();
+            });
+    </script>
+
+</body>
+</html>
