@@ -155,6 +155,7 @@ def detail_page():
         st.session_state.page = "Daftar Pasien"
         st.session_state.selected_patient = None
         st.query_params.clear()  # bersihkan URL dari pid
+        st.rerun()
 
 
 
