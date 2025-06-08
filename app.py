@@ -1,125 +1,161 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
+import streamlit as st
+import sqlite3
 import os
 
-app = Flask(__name__)
+# Konfigurasi dasar
+DB_NAME = "patients.db"
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Konfigurasi database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///patients.db'
-app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
-db = SQLAlchemy(app)
+# Inisialisasi session state
+if "page" not in st.session_state:
+    st.session_state.page = "Upload"
+if "selected_patient" not in st.session_state:
+    st.session_state.selected_patient = None
 
-# Model untuk menyimpan data pasien dan foto
-class Patient(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(200), nullable=False)
-    filenames = db.Column(db.String(1000), nullable=False)  # Menyimpan nama file foto sebagai string
-    labels = db.Column(db.String(1000), nullable=False)  # Menyimpan label foto sebagai string
+# Koneksi database
+conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+c = conn.cursor()
+c.execute('''
+    CREATE TABLE IF NOT EXISTS patients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL,
+        filenames TEXT NOT NULL,
+        labels TEXT NOT NULL
+    )
+''')
+conn.commit()
 
-    def __repr__(self):
-        return f'<Patient {self.name}>'
+# Fungsi simpan pasien
+def save_patient(name, description, filenames, labels):
+    filenames_str = ",".join(filenames)
+    labels_str = ",".join(labels)
+    c.execute("INSERT INTO patients (name, description, filenames, labels) VALUES (?, ?, ?, ?)",
+              (name, description, filenames_str, labels_str))
+    conn.commit()
 
-# Fungsi untuk memeriksa ekstensi file yang diizinkan
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+# Fungsi ambil semua pasien
+def get_all_patients():
+    c.execute("SELECT id, name, description FROM patients")
+    return c.fetchall()
 
-# Menambahkan route untuk melayani file dari folder 'uploads'
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+# Fungsi ambil detail pasien
+def get_patient_by_id(pid):
+    c.execute("SELECT name, description, filenames, labels FROM patients WHERE id = ?", (pid,))
+    return c.fetchone()
 
-# Halaman utama (Frontend)
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Halaman Upload
+def upload_page():
+    st.header("Upload Foto Pasien")
+    name = st.text_input("Nama Pasien")
+    description = st.text_input("Deskripsi Kasus")
 
-# Halaman daftar pasien
-@app.route('/patients')
-def patients():
-    patients = Patient.query.all()
-    patients_list = [{"id": p.id, "name": p.name, "category": p.description} for p in patients]
-    return jsonify(patients=patients_list)
-
-# Halaman detail pasien dan foto
-@app.route('/patient/<int:patient_id>/photos')
-def view_photos(patient_id):
-    patient = Patient.query.get_or_404(patient_id)
-    filenames = patient.filenames.split(',')  # Pisahkan nama file berdasarkan koma
-    labels = patient.labels.split(',')  # Pisahkan label berdasarkan koma
-
-    # Combine filenames and labels
-    photos = [{'filename': filename, 'label': label} for filename, label in zip(filenames, labels)]
-
-    return render_template('view_photos.html', patient=patient, photos=photos)
-
-
-# Form upload foto pasien
-@app.route('/upload', methods=['POST'])
-def upload():
-    # Cek apakah file yang dibutuhkan ada dalam request
-    required_files = [
-        'panoramic_opg', 'foto_frontal', 'foto_senyum', 'foto_lateral', 
-        'intra_oral_kanan', 'intra_oral_depan', 'intra_oral_kiri', 
-        'oklusal_rahang_atas', 'oklusal_rahang_bawah', 'foto_tambahan_lateral_kanan',
-        'foto_tambahan_lateral_kanan_senyum', 'foto_tambahan_depan_bracket_behel'
-    ]
-
-    # Jika file yang dibutuhkan tidak ada
-    for file in required_files:
-        if file not in request.files:
-            return f'Missing file for {file}', 400
-
-    # Define file inputs and corresponding labels
-    files = {
-        'panoramic_opg': request.files['panoramic_opg'],
-        'foto_frontal': request.files['foto_frontal'],
-        'foto_senyum': request.files['foto_senyum'],
-        'foto_lateral': request.files['foto_lateral'],
-        'intra_oral_kanan': request.files['intra_oral_kanan'],
-        'intra_oral_depan': request.files['intra_oral_depan'],
-        'intra_oral_kiri': request.files['intra_oral_kiri'],
-        'oklusal_rahang_atas': request.files['oklusal_rahang_atas'],
-        'oklusal_rahang_bawah': request.files['oklusal_rahang_bawah'],
-        'foto_tambahan_lateral_kanan': request.files['foto_tambahan_lateral_kanan'],
-        'foto_tambahan_lateral_kanan_senyum': request.files['foto_tambahan_lateral_kanan_senyum'],
-        'foto_tambahan_depan_bracket_behel': request.files['foto_tambahan_depan_bracket_behel']
+    photo_inputs = {
+        "panoramic_opg": "Panoramic/OPG",
+        "foto_frontal": "Foto Frontal",
+        "foto_senyum": "Foto Senyum",
+        "foto_lateral": "Foto Lateral",
+        "intra_oral_kanan": "Intra Oral Kanan",
+        "intra_oral_depan": "Intra Oral Depan",
+        "intra_oral_kiri": "Intra Oral Kiri",
+        "oklusal_rahang_atas": "Oklusal Rahang Atas",
+        "oklusal_rahang_bawah": "Oklusal Rahang Bawah",
+        "foto_tambahan_lateral_kanan": "Foto Tambahan Lateral Kanan",
+        "foto_tambahan_lateral_kanan_senyum": "Foto Tambahan Lateral Kanan Senyum",
+        "foto_tambahan_depan_bracket_behel": "Foto Tambahan Depan Bracket Behel"
     }
 
-    # Mapping of labels to file inputs
-    labels = [
-        'Panoramic/OPG', 'Foto Frontal', 'Foto Senyum', 'Foto Lateral', 
-        'Intra Oral Kanan', 'Intra Oral Depan', 'Intra Oral Kiri', 
-        'Oklusal Rahang Atas', 'Oklusal Rahang Bawah', 'Foto Tambahan Lateral Kanan',
-        'Foto Tambahan Lateral Kanan Senyum', 'Foto Tambahan Depan Bracket Behel'
-    ]
+    uploaded_filenames = []
+    uploaded_labels = []
 
-    filenames = []
-    file_labels = []  # To store the labels for each photo
+    for key, label in photo_inputs.items():
+        file = st.file_uploader(f"{label}", type=["jpg", "jpeg", "png"], key=key)
+        if file:
+            filepath = os.path.join(UPLOAD_FOLDER, file.name)
+            with open(filepath, "wb") as f:
+                f.write(file.read())
+            uploaded_filenames.append(file.name)
+            uploaded_labels.append(label)
 
-    for key, label in zip(files.keys(), labels):
-        file = files[key]
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            filenames.append(filename)
-            file_labels.append(label)  # Save the corresponding label
+    if st.button("Simpan Data Pasien"):
+        if name and description and uploaded_filenames:
+            save_patient(name, description, uploaded_filenames, uploaded_labels)
+            st.success("Data pasien berhasil disimpan.")
+        else:
+            st.error("Mohon isi semua data dan upload minimal satu foto.")
 
-    # Simpan data pasien ke database
-    patient_name = request.form['patient_name']
-    description = request.form['description']
-    filenames_str = ','.join(filenames)  # Menyimpan nama file foto sebagai string yang dipisahkan koma
-    labels_str = ','.join(file_labels)  # Menyimpan label foto sebagai string yang dipisahkan koma
+# Halaman Daftar Pasien
+def patients_page():
+    st.header("Daftar Pasien")
+    patients = get_all_patients()
 
-    new_patient = Patient(name=patient_name, description=description, filenames=filenames_str, labels=labels_str)
-    db.session.add(new_patient)
-    db.session.commit()
-    
-    return redirect(url_for('index'))
+    if not patients:
+        st.info("Belum ada data pasien.")
+        return
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Membuat database jika belum ada
-    app.run(debug=True, host='0.0.0.0', port=8181)
+    for pid, name, desc in patients:
+        col1, col2 = st.columns([6, 1])
+        with col1:
+            st.markdown(f"**{name}** - {desc}")
+        with col2:
+            if st.button("Lihat Detail", key=f"view_{pid}"):
+                st.session_state.clicked_button_id = pid
+
+
+# Halaman Detail Pasien
+def detail_page():
+    if st.session_state.selected_patient is None:
+        st.warning("Silakan pilih pasien dari daftar.")
+        return
+
+    pid = st.session_state.selected_patient
+    data = get_patient_by_id(pid)
+    if not data:
+        st.error("Data pasien tidak ditemukan.")
+        return
+
+    name, desc, filenames_str, labels_str = data
+    filenames = filenames_str.split(",")
+    labels = labels_str.split(",")
+
+    st.markdown(f"<h1 style='text-align:center; color:#4CAF50;'>Foto Pasien: {name}</h1>", unsafe_allow_html=True)
+    st.caption(desc)
+
+    num_cols = 3
+    for i in range(0, len(filenames), num_cols):
+        cols = st.columns(num_cols)
+        for j in range(num_cols):
+            idx = i + j
+            if idx < len(filenames):
+                with cols[j]:
+                    st.image(os.path.join(UPLOAD_FOLDER, filenames[idx]),
+                        caption=labels[idx],
+                        use_container_width=True)
+
+    st.markdown("<div style='text-align:center; margin-top:30px;'>", unsafe_allow_html=True)
+    if st.button("⬅️ Kembali ke Daftar Pasien"):
+        st.session_state.page = "Daftar Pasien"
+        st.rerun()
+ 
+# Sidebar Navigasi
+menu = st.sidebar.radio("Pilih Halaman", ["Upload", "Daftar Pasien"])
+if menu == "Upload":
+    st.session_state.page = "Upload"
+elif menu == "Daftar Pasien":
+    st.session_state.page = "Daftar Pasien"
+
+# Tangani klik tombol detail pasien
+if "clicked_button_id" in st.session_state:
+    st.session_state.selected_patient = st.session_state.clicked_button_id
+    st.session_state.page = "Detail Pasien"
+    del st.session_state.clicked_button_id  # reset setelah navigasi
+
+# Routing utama
+if st.session_state.page == "Upload":
+    upload_page()
+elif st.session_state.page == "Daftar Pasien":
+    patients_page()
+elif st.session_state.page == "Detail Pasien":
+    detail_page()
+

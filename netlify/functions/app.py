@@ -3,12 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import os
 
-# Specify the path for the template folder explicitly
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), '../../templates'))
+app = Flask(__name__)
 
 # Konfigurasi database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///patients.db'
-app.config['UPLOAD_FOLDER'] = '../../uploads'  # Use /tmp for Netlify functions
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 db = SQLAlchemy(app)
 
@@ -35,7 +34,7 @@ def uploaded_file(filename):
 # Halaman utama (Frontend)
 @app.route('/')
 def index():
-    return render_template('index.html')  # Flask should now find this template in the '../templates' folder
+    return render_template('index.html')
 
 # Halaman daftar pasien
 @app.route('/patients')
@@ -56,63 +55,48 @@ def view_photos(patient_id):
 
     return render_template('view_photos.html', patient=patient, photos=photos)
 
+
 # Form upload foto pasien
 @app.route('/upload', methods=['POST'])
-def upload():
-    required_files = [
-        'panoramic_opg', 'foto_frontal', 'foto_senyum', 'foto_lateral',
-        'intra_oral_kanan', 'intra_oral_depan', 'intra_oral_kiri',
-        'oklusal_rahang_atas', 'oklusal_rahang_bawah', 'foto_tambahan_lateral_kanan',
-        'foto_tambahan_lateral_kanan_senyum', 'foto_tambahan_depan_bracket_behel'
-    ]
+def upload_files():
+    st.title("Upload Foto Pasien")
+    name = st.text_input("Nama Pasien")
+    description = st.text_input("Deskripsi Kasus")
 
-    for file in required_files:
-        if file not in request.files:
-            return f'Missing file for {file}', 400
-
-    files = {
-        'panoramic_opg': request.files['panoramic_opg'],
-        'foto_frontal': request.files['foto_frontal'],
-        'foto_senyum': request.files['foto_senyum'],
-        'foto_lateral': request.files['foto_lateral'],
-        'intra_oral_kanan': request.files['intra_oral_kanan'],
-        'intra_oral_depan': request.files['intra_oral_depan'],
-        'intra_oral_kiri': request.files['intra_oral_kiri'],
-        'oklusal_rahang_atas': request.files['oklusal_rahang_atas'],
-        'oklusal_rahang_bawah': request.files['oklusal_rahang_bawah'],
-        'foto_tambahan_lateral_kanan': request.files['foto_tambahan_lateral_kanan'],
-        'foto_tambahan_lateral_kanan_senyum': request.files['foto_tambahan_lateral_kanan_senyum'],
-        'foto_tambahan_depan_bracket_behel': request.files['foto_tambahan_depan_bracket_behel']
+    photo_inputs = {
+        "panoramic_opg": "Panoramic/OPG",
+        "foto_frontal": "Foto Frontal",
+        "foto_senyum": "Foto Senyum",
+        "foto_lateral": "Foto Lateral",
+        "intra_oral_kanan": "Intra Oral Kanan",
+        "intra_oral_depan": "Intra Oral Depan",
+        "intra_oral_kiri": "Intra Oral Kiri",
+        "oklusal_rahang_atas": "Oklusal Rahang Atas",
+        "oklusal_rahang_bawah": "Oklusal Rahang Bawah",
+        "foto_tambahan_lateral_kanan": "Foto Tambahan Lateral Kanan",
+        "foto_tambahan_lateral_kanan_senyum": "Foto Tambahan Lateral Kanan Senyum",
+        "foto_tambahan_depan_bracket_behel": "Foto Tambahan Depan Bracket Behel"
     }
 
-    labels = [
-        'Panoramic/OPG', 'Foto Frontal', 'Foto Senyum', 'Foto Lateral',
-        'Intra Oral Kanan', 'Intra Oral Depan', 'Intra Oral Kiri',
-        'Oklusal Rahang Atas', 'Oklusal Rahang Bawah', 'Foto Tambahan Lateral Kanan',
-        'Foto Tambahan Lateral Kanan Senyum', 'Foto Tambahan Depan Bracket Behel'
-    ]
+    uploaded_filenames = []
+    uploaded_labels = []
 
-    filenames = []
-    file_labels = []
+    for key, label in photo_inputs.items():
+        file = st.file_uploader(f"Upload {label}", type=["png", "jpg", "jpeg"], key=key)
+        if file:
+            filepath = os.path.join(UPLOAD_FOLDER, file.name)
+            with open(filepath, "wb") as f:
+                f.write(file.read())
+            uploaded_filenames.append(file.name)
+            uploaded_labels.append(label)
 
-    for key, label in zip(files.keys(), labels):
-        file = files[key]
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            filenames.append(filename)
-            file_labels.append(label)
+    if st.button("Simpan Data Pasien"):
+        if name and description and uploaded_filenames:
+            save_patient(name, description, uploaded_filenames, uploaded_labels)
+            st.success("Data pasien berhasil disimpan.")
+        else:
+            st.error("Mohon isi nama, deskripsi, dan upload minimal satu foto.")
 
-    patient_name = request.form['patient_name']
-    description = request.form['description']
-    filenames_str = ','.join(filenames)
-    labels_str = ','.join(file_labels)
-
-    new_patient = Patient(name=patient_name, description=description, filenames=filenames_str, labels=labels_str)
-    db.session.add(new_patient)
-    db.session.commit()
-
-    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     with app.app_context():

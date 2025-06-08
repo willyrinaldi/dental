@@ -1,7 +1,0 @@
-[build]
-  publish = "static"
-  functions = "netlify/functions"
-
-[context.production.environment]
-  FLASK_APP = "netlify/functions/app.py"
-
