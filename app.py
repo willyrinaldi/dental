@@ -7,6 +7,26 @@ DB_NAME = "patients.db"
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Atur kode akses
+ACCESS_CODE = "yaskacantik"
+
+# Inisialisasi autentikasi
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+# Proteksi awal: minta kode dulu
+if not st.session_state.authenticated:
+    st.title("🔒 Akses Terkunci")
+    input_code = st.text_input("Masukkan kode akses untuk membuka halaman:", type="password")
+    if st.button("Masuk"):
+        if input_code == ACCESS_CODE:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("Kode salah.")
+    st.stop()
+
+
 # Inisialisasi session state
 if "page" not in st.session_state:
     st.session_state.page = "Daftar Pasien"
