@@ -154,7 +154,8 @@ def detail_page():
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
         st.session_state.selected_patient = None
-        st.experimental_set_query_params()  # bersihkan URL dari ?pid
+        st.query_params.clear()  # bersihkan URL dari pid
+
 
 
 # Sidebar Navigasi (hanya jika tidak pakai pid)
