@@ -151,12 +151,11 @@ def detail_page():
                              caption=labels[idx],
                              use_container_width=True)
 
-    st.markdown(
-        '<a href="https://dental-jo4cwqzjgej7tpd6gisznf.streamlit.app/" '
-        'style="display:inline-block; padding:10px 20px; background-color:#4CAF50; '
-        'color:white; text-decoration:none; border-radius:8px; text-align:center;">⬅️ Kembali ke Daftar Pasien</a>',
-        unsafe_allow_html=True
-    )
+    if st.button("⬅️ Kembali ke Daftar Pasien"):
+        st.session_state.page = "Daftar Pasien"
+        st.session_state.selected_patient = None
+        st.experimental_set_query_params()  # bersihkan URL dari ?pid
+
 
 # Sidebar Navigasi (hanya jika tidak pakai pid)
 if "pid" not in params:
