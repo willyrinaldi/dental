@@ -144,6 +144,8 @@ def detail_page():
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
         st.session_state.selected_patient = None
+        st.rerun()
+
 
 # Tangani URL parameter ?pid=xxx setelah layout siap
 params = st.query_params
