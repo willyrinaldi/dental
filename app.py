@@ -121,13 +121,15 @@ def patients_page():
         with col3:
             st.markdown(
                 f"""
-                <div style="text-align: center;">
-                    <label style="font-weight: 600;">Link Share</label>
-                    <input type="text" value="{link}" readonly style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 5px;">
+                <div style='margin-top: 35px; display: flex; align-items: center; gap: 10px;'>
+                    <strong>Link Share:</strong>
+                    <input type="text" value="{link}" readonly 
+                        style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 5px;">
                 </div>
                 """,
                 unsafe_allow_html=True
             )
+ 
 
 
 # Halaman Detail Pasien
