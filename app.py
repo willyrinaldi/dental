@@ -7,6 +7,13 @@ DB_NAME = "patients.db"
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Ambil parameter dari URL (jika ada)
+params = st.query_params
+if "pid" in params:
+    st.session_state.page = "Detail Pasien"
+    st.session_state.selected_patient = int(params["pid"])
+
+
 # Inisialisasi session state
 if "page" not in st.session_state:
     st.session_state.page = "Upload"
@@ -44,6 +51,11 @@ def get_all_patients():
 def get_patient_by_id(pid):
     c.execute("SELECT name, description, filenames, labels FROM patients WHERE id = ?", (pid,))
     return c.fetchone()
+
+# Generate share link
+def generate_share_link(pid):
+    app_url = "https://dental-jo4cwqzjgej7tpd6gisznf.streamlit.app/"  # Ganti dengan URL Streamlit Cloud kamu
+    return f"{app_url}?pid={pid}"
 
 # Halaman Upload
 def upload_page():
@@ -95,13 +107,15 @@ def patients_page():
         return
 
     for pid, name, desc in patients:
-        col1, col2 = st.columns([6, 1])
+        col1, col2, col3 = st.columns([4, 1, 4])
         with col1:
             st.markdown(f"**{name}** - {desc}")
         with col2:
             if st.button("Lihat Detail", key=f"view_{pid}"):
-                st.session_state.clicked_button_id = pid
-
+                st.session_state.selected_patient = pid
+                st.session_state.page = "Detail Pasien"
+        with col3:
+            st.text_input("Link Share", value=generate_share_link(pid), key=f"link_{pid}")
 
 # Halaman Detail Pasien
 def detail_page():
@@ -130,14 +144,14 @@ def detail_page():
             if idx < len(filenames):
                 with cols[j]:
                     st.image(os.path.join(UPLOAD_FOLDER, filenames[idx]),
-                        caption=labels[idx],
-                        use_container_width=True)
+                             caption=labels[idx],
+                             use_container_width=True)
 
     st.markdown("<div style='text-align:center; margin-top:30px;'>", unsafe_allow_html=True)
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
-        st.rerun()
- 
+
+# Sidebar Navigasi
 # Sidebar Navigasi
 menu = st.sidebar.radio("Pilih Halaman", ["Upload", "Daftar Pasien"])
 if menu == "Upload":
@@ -145,17 +159,20 @@ if menu == "Upload":
 elif menu == "Daftar Pasien":
     st.session_state.page = "Daftar Pasien"
 
-# Tangani klik tombol detail pasien
-if "clicked_button_id" in st.session_state:
-    st.session_state.selected_patient = st.session_state.clicked_button_id
-    st.session_state.page = "Detail Pasien"
-    del st.session_state.clicked_button_id  # reset setelah navigasi
+# ✅ Tangani ?pid=xxx hanya jika belum ada selected_patient
+if "selected_patient" not in st.session_state or st.session_state.selected_patient is None:
+    params = st.query_params
+    if "pid" in params:
+        try:
+            st.session_state.selected_patient = int(params["pid"])
+            st.session_state.page = "Detail Pasien"
+        except:
+            st.error("Parameter 'pid' tidak valid.")
 
-# Routing utama
+# Routing halaman
 if st.session_state.page == "Upload":
     upload_page()
 elif st.session_state.page == "Daftar Pasien":
     patients_page()
 elif st.session_state.page == "Detail Pasien":
     detail_page()
-
