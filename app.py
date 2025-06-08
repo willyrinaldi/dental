@@ -7,13 +7,6 @@ DB_NAME = "patients.db"
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Ambil parameter dari URL (jika ada)
-params = st.query_params
-if "pid" in params:
-    st.session_state.page = "Detail Pasien"
-    st.session_state.selected_patient = int(params["pid"])
-
-
 # Inisialisasi session state
 if "page" not in st.session_state:
     st.session_state.page = "Upload"
@@ -54,7 +47,7 @@ def get_patient_by_id(pid):
 
 # Generate share link
 def generate_share_link(pid):
-    app_url = "https://dental-jo4cwqzjgej7tpd6gisznf.streamlit.app/"  # Ganti dengan URL Streamlit Cloud kamu
+    app_url = "https://dental-jo4cwqzjgej7tpd6gisznf.streamlit.app/"
     return f"{app_url}?pid={pid}"
 
 # Halaman Upload
@@ -150,26 +143,27 @@ def detail_page():
     st.markdown("<div style='text-align:center; margin-top:30px;'>", unsafe_allow_html=True)
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
+        st.session_state.selected_patient = None
 
-# Sidebar Navigasi
-# Sidebar Navigasi
-menu = st.sidebar.radio("Pilih Halaman", ["Upload", "Daftar Pasien"])
-if menu == "Upload":
-    st.session_state.page = "Upload"
-elif menu == "Daftar Pasien":
-    st.session_state.page = "Daftar Pasien"
+# Tangani URL parameter ?pid=xxx setelah layout siap
+params = st.query_params
+if "pid" in params:
+    try:
+        pid = int(params["pid"])
+        st.session_state.selected_patient = pid
+        st.session_state.page = "Detail Pasien"
+    except:
+        st.error("Parameter 'pid' tidak valid.")
 
-# ✅ Tangani ?pid=xxx hanya jika belum ada selected_patient
-if "selected_patient" not in st.session_state or st.session_state.selected_patient is None:
-    params = st.query_params
-    if "pid" in params:
-        try:
-            st.session_state.selected_patient = int(params["pid"])
-            st.session_state.page = "Detail Pasien"
-        except:
-            st.error("Parameter 'pid' tidak valid.")
+# Sidebar Navigasi (diaktifkan jika buka manual)
+if "pid" not in params:
+    menu = st.sidebar.radio("Pilih Halaman", ["Upload", "Daftar Pasien"])
+    if menu == "Upload":
+        st.session_state.page = "Upload"
+    elif menu == "Daftar Pasien":
+        st.session_state.page = "Daftar Pasien"
 
-# Routing halaman
+# Routing ke halaman
 if st.session_state.page == "Upload":
     upload_page()
 elif st.session_state.page == "Daftar Pasien":
