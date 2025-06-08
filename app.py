@@ -9,9 +9,19 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Inisialisasi session state
 if "page" not in st.session_state:
-    st.session_state.page = "Upload"
+    st.session_state.page = "Daftar Pasien"
 if "selected_patient" not in st.session_state:
     st.session_state.selected_patient = None
+
+# Tangani URL parameter ?pid=xxx
+params = st.query_params
+if "pid" in params and st.session_state.selected_patient is None:
+    try:
+        pid = int(params["pid"])
+        st.session_state.selected_patient = pid
+        st.session_state.page = "Detail Pasien"
+    except:
+        st.error("Parameter 'pid' tidak valid.")
 
 # Koneksi database
 conn = sqlite3.connect(DB_NAME, check_same_thread=False)
@@ -47,8 +57,7 @@ def get_patient_by_id(pid):
 
 # Generate share link
 def generate_share_link(pid):
-    app_url = "https://dental-jo4cwqzjgej7tpd6gisznf.streamlit.app/"
-    return f"{app_url}?pid={pid}"
+    return f"https://dental-jo4cwqzjgej7tpd6gisznf.streamlit.app/?pid={pid}"
 
 # Halaman Upload
 def upload_page():
@@ -100,15 +109,17 @@ def patients_page():
         return
 
     for pid, name, desc in patients:
-        col1, col2, col3 = st.columns([4, 1, 4])
+        col1, col2, col3 = st.columns([4, 2, 5])
         with col1:
             st.markdown(f"**{name}** - {desc}")
         with col2:
-            if st.button("Lihat Detail", key=f"view_{pid}"):
-                st.session_state.selected_patient = pid
-                st.session_state.page = "Detail Pasien"
+            link = generate_share_link(pid)
+            st.markdown(
+                f'<a href="{link}" target="_blank"><button>Lihat Detail</button></a>',
+                unsafe_allow_html=True
+            )
         with col3:
-            st.text_input("Link Share", value=generate_share_link(pid), key=f"link_{pid}")
+            st.text_input("Link Share", value=link, key=f"link_{pid}")
 
 # Halaman Detail Pasien
 def detail_page():
@@ -140,32 +151,20 @@ def detail_page():
                              caption=labels[idx],
                              use_container_width=True)
 
-    st.markdown("<div style='text-align:center; margin-top:30px;'>", unsafe_allow_html=True)
-    if st.button("⬅️ Kembali ke Daftar Pasien"):
-        st.session_state.page = "Daftar Pasien"
-        st.session_state.selected_patient = None
-        st.rerun()
+    st.markdown(
+        '<a href="https://dental-jo4cwqzjgej7tpd6gisznf.streamlit.app/" '
+        'style="display:inline-block; padding:10px 20px; background-color:#4CAF50; '
+        'color:white; text-decoration:none; border-radius:8px; text-align:center;">⬅️ Kembali ke Daftar Pasien</a>',
+        unsafe_allow_html=True
+    )
 
-
-# Tangani URL parameter ?pid=xxx setelah layout siap
-params = st.query_params
-if "pid" in params:
-    try:
-        pid = int(params["pid"])
-        st.session_state.selected_patient = pid
-        st.session_state.page = "Detail Pasien"
-    except:
-        st.error("Parameter 'pid' tidak valid.")
-
-# Sidebar Navigasi (diaktifkan jika buka manual)
+# Sidebar Navigasi (hanya jika tidak pakai pid)
 if "pid" not in params:
-    menu = st.sidebar.radio("Pilih Halaman", ["Upload", "Daftar Pasien"])
-    if menu == "Upload":
-        st.session_state.page = "Upload"
-    elif menu == "Daftar Pasien":
-        st.session_state.page = "Daftar Pasien"
+    default_index = 1 if st.session_state.page == "Daftar Pasien" else 0
+    menu = st.sidebar.radio("Pilih Halaman", ["Upload", "Daftar Pasien"], key="menu_radio", index=default_index)
+    st.session_state.page = menu
 
-# Routing ke halaman
+# Routing halaman
 if st.session_state.page == "Upload":
     upload_page()
 elif st.session_state.page == "Daftar Pasien":
