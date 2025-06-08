@@ -119,15 +119,8 @@ def patients_page():
                 unsafe_allow_html=True
             )
         with col3:
-            st.markdown(
-                f"""
-                <div style="text-align: center;">
-                    <label style="font-weight: 600;">Link Share</label><br>
-                    <input type="text" value="{link}" readonly style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 5px;">
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<p style='margin-top: 35px;'><strong>Link Share:</strong> {link}</p>", unsafe_allow_html=True)
+
 
 
 # Halaman Detail Pasien
