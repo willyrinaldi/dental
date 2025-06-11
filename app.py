@@ -238,15 +238,25 @@ def detail_page():
     # Tampilkan foto before after berdampingan dengan portrait resize
     for base_label, images in grouped_photos.items():
         st.markdown(f"### {base_label}")
+
         cols = st.columns(2)
+
         with cols[0]:
             if "before" in images:
-                img = load_and_process_image(os.path.join(UPLOAD_FOLDER, images["before"][0]))
-                st.image(img, caption="Before")
+                st.markdown("**Before**")
+                img_before = load_and_process_image(os.path.join(UPLOAD_FOLDER, images["before"][0]))
+                st.image(img_before, use_container_width=True)
+
         with cols[1]:
             if "after" in images:
-                img = load_and_process_image(os.path.join(UPLOAD_FOLDER, images["after"][0]))
-                st.image(img, caption="After")
+                st.markdown("**After**")
+                img_after = load_and_process_image(os.path.join(UPLOAD_FOLDER, images["after"][0]))
+                st.image(img_after, use_container_width=True)
+
+        st.markdown("---")
+
+
+
 
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
