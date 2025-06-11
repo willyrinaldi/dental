@@ -141,6 +141,22 @@ def upload_page():
         else:
             st.error("Mohon isi semua data dan upload minimal satu foto.")
 
+def delete_patient(pid):
+    # Hapus data dari DB
+    c.execute("SELECT filenames FROM patients WHERE id = ?", (pid,))
+    row = c.fetchone()
+    if row:
+        filenames_str = row[0]
+        filenames = filenames_str.split(",")
+        # Hapus file foto dari folder
+        for fn in filenames:
+            try:
+                os.remove(os.path.join(UPLOAD_FOLDER, fn))
+            except FileNotFoundError:
+                pass
+    c.execute("DELETE FROM patients WHERE id = ?", (pid,))
+    conn.commit()
+
 def patients_page():
     st.header("Daftar Pasien")
     patients = get_all_patients()
@@ -150,7 +166,7 @@ def patients_page():
         return
 
     for pid, name, desc in patients:
-        col1, col2, col3 = st.columns([4, 2, 5])
+        col1, col2, col3, col4 = st.columns([4, 2, 2, 5])
         with col1:
             st.markdown(f"**{name}** - {desc}")
         with col2:
@@ -160,6 +176,16 @@ def patients_page():
                 unsafe_allow_html=True
             )
         with col3:
+            # Checkbox untuk konfirmasi hapus
+            confirm_key = f"confirm_delete_{pid}"
+            if st.checkbox("Hapus", key=confirm_key):
+                if st.button("🗑️ Hapus", key=f"delete_{pid}"):
+                    delete_patient(pid)
+                    st.success("Data pasien berhasil dihapus.")
+                    st.rerun()
+
+        with col4:
+            link = generate_share_link(pid)
             st.markdown(
                 f"""
                 <div style='display: flex; align-items: center; gap: 10px;'>
@@ -170,6 +196,7 @@ def patients_page():
                 """,
                 unsafe_allow_html=True
             )
+
 
 def detail_page():
     if st.session_state.selected_patient is None:
