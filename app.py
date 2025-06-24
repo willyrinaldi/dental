@@ -35,13 +35,18 @@ if "selected_patient" not in st.session_state:
 # URL params handler
 params = st.query_params
 
-if "pid" in params and st.session_state.selected_patient is None:
-    try:
-        pid = int(params["pid"][0])
-        st.session_state.selected_patient = pid
-        st.session_state.page = "Detail Pasien"
-    except:
-        st.error("Parameter 'pid' tidak valid.")
+def load_query_params():
+    params = st.experimental_get_query_params()
+    if "pid" in params and st.session_state.selected_patient is None:
+        try:
+            pid = int(params["pid"][0])
+            st.session_state.selected_patient = pid
+            st.session_state.page = "Detail Pasien"
+        except:
+            st.error("Parameter 'pid' tidak valid.")
+
+load_query_params()
+
 
 # DB connection
 conn = sqlite3.connect(DB_NAME, check_same_thread=False)
@@ -261,8 +266,9 @@ def detail_page():
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
         st.session_state.selected_patient = None
-        st.experimental_set_query_params()
+        st.experimental_set_query_params()  # <-- hapus semua query params
         st.rerun()
+
 
 # Sidebar navigation (hide if using ?pid=)
 if "pid" not in params:
