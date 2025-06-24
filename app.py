@@ -20,19 +20,11 @@ if not st.session_state.authenticated:
     if st.button("Masuk"):
         if input_code == ACCESS_CODE:
             st.session_state.authenticated = True
-            st.experimental_rerun()  # rerun setelah login
+            st.rerun()  # <-- ini benar ada di dalam button
         else:
             st.error("Kode salah.")
     st.stop()
 
-# Tombol Logout di sidebar (atau di atas halaman)
-if st.sidebar.button("Logout"):
-    st.session_state.authenticated = False
-    # reset juga session lain biar bersih
-    for key in ["page", "selected_patient"]:
-        if key in st.session_state:
-            del st.session_state[key]
-    st.experimental_rerun()
 
 # Session defaults
 if "page" not in st.session_state:
@@ -41,7 +33,7 @@ if "selected_patient" not in st.session_state:
     st.session_state.selected_patient = None
 
 # URL params handler
-params = st.experimental_get_query_params()
+params = st.query_params
 
 if "pid" in params and st.session_state.selected_patient is None:
     try:
@@ -88,6 +80,7 @@ def load_and_process_image(path, target_height=400):
     w, h = img.size
     new_w = int(w * target_height / h)
     img = img.resize((new_w, target_height))
+    # Crop center if landscape
     if new_w > target_height:
         left = (new_w - target_height) // 2
         right = left + target_height
@@ -99,6 +92,7 @@ def upload_page():
     name = st.text_input("Nama Pasien")
     description = st.text_input("Deskripsi Kasus")
 
+    # Before & After pairs to upload
     photo_inputs = {
         "panoramic_opg_before": "Panoramic/OPG Before",
         "panoramic_opg_after": "Panoramic/OPG After",
@@ -143,16 +137,18 @@ def upload_page():
         if name.strip() and description.strip() and uploaded_filenames:
             save_patient(name.strip(), description.strip(), uploaded_filenames, uploaded_labels)
             st.success("Data pasien berhasil disimpan.")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Mohon isi semua data dan upload minimal satu foto.")
 
 def delete_patient(pid):
+    # Hapus data dari DB
     c.execute("SELECT filenames FROM patients WHERE id = ?", (pid,))
     row = c.fetchone()
     if row:
         filenames_str = row[0]
         filenames = filenames_str.split(",")
+        # Hapus file foto dari folder
         for fn in filenames:
             try:
                 os.remove(os.path.join(UPLOAD_FOLDER, fn))
@@ -180,12 +176,14 @@ def patients_page():
                 unsafe_allow_html=True
             )
         with col3:
+            # Checkbox untuk konfirmasi hapus
             confirm_key = f"confirm_delete_{pid}"
             if st.checkbox("Hapus", key=confirm_key):
                 if st.button("🗑️ Hapus", key=f"delete_{pid}"):
                     delete_patient(pid)
                     st.success("Data pasien berhasil dihapus.")
-                    st.experimental_rerun()
+                    st.rerun()
+
         with col4:
             link = generate_share_link(pid)
             st.markdown(
@@ -198,6 +196,7 @@ def patients_page():
                 """,
                 unsafe_allow_html=True
             )
+
 
 def detail_page():
     if st.session_state.selected_patient is None:
@@ -217,13 +216,18 @@ def detail_page():
     st.markdown(f"<h1 style='text-align:center; color:#4CAF50;'>Foto Pasien: {name}</h1>", unsafe_allow_html=True)
     st.caption(desc)
 
+    # Group photos by base label and before/after
+    # "foto_frontal_before" -> base = "foto_frontal", state = "before"
     grouped_photos = {}
     for f, l in zip(filenames, labels):
+        # coba pisah label: expect label punya "_Before" atau "_After" (case insensitive)
+        # Contoh label: "Foto Frontal Before"
         parts = l.lower().split()
         if parts[-1] in ("before", "after"):
             state = parts[-1]
             base_label = " ".join(parts[:-1]).title()
         else:
+            # fallback
             state = "before"
             base_label = l.title()
 
@@ -231,6 +235,7 @@ def detail_page():
             grouped_photos[base_label] = {}
         grouped_photos[base_label][state] = grouped_photos[base_label].get(state, []) + [f]
 
+    # Tampilkan foto before after berdampingan dengan portrait resize
     for base_label, images in grouped_photos.items():
         st.markdown(f"### {base_label}")
 
@@ -250,10 +255,15 @@ def detail_page():
 
         st.markdown("---")
 
+
+
+
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
         st.session_state.selected_patient = None
-        st.experimental_rerun()
+        st.experimental_set_query_params(**{})  # explicitly reset params to empty dict
+        st.rerun()
+
 
 # Sidebar navigation (hide if using ?pid=)
 if "pid" not in params:
