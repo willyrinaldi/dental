@@ -265,7 +265,7 @@ def detail_page():
 
 
     st.markdown(
-        '<a href="https://dentalyaska.streamlit.app/"><button>⬅️ Kembali ke Daftar Pasien</button></a>',
+        '<a href="https://dentalyaska.streamlit.app/" target="_self"><button>⬅️ Kembali ke Daftar Pasien</button></a>',
         unsafe_allow_html=True
     )
 
