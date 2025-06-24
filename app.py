@@ -267,8 +267,9 @@ def detail_page():
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
         st.session_state.selected_patient = None
-        st.set_query_params()  # <-- hapus semua query params
-        st.rerun()
+        st.set_query_params(**{})  # Clear all query params, including pid
+        st.experimental_rerun()
+
 
 
 # Sidebar navigation (hide if using ?pid=)
