@@ -1,6 +1,7 @@
 import streamlit as st
 import sqlite3
 import os
+from streamlit_cookies_manager import EncryptedCookieManager
 from PIL import Image
 
 # Config
@@ -9,18 +10,24 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ACCESS_CODE = "okeoke"
+ 
 
-# Authentication
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+cookies = EncryptedCookieManager(
+    prefix="dentalyaska_",
+    password="some-32-byte-long-password-1234567890123456",  # buat enkripsi cookie, harus 32 char
+)
 
-if not st.session_state.authenticated:
+if not cookies.ready():
+    st.stop()
+
+if cookies.get("authenticated") != "true":
     st.title("🔒 Akses Terkunci")
     input_code = st.text_input("Masukkan kode akses untuk membuka halaman:", type="password")
     if st.button("Masuk"):
         if input_code == ACCESS_CODE:
-            st.session_state.authenticated = True
-            st.rerun()  # <-- ini benar ada di dalam button
+            cookies["authenticated"] = "true"
+            cookies.save()
+            st.experimental_rerun()
         else:
             st.error("Kode salah.")
     st.stop()
