@@ -8,7 +8,7 @@ DB_NAME = "patients.db"
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-ACCESS_CODE = "yaskacantik"
+ACCESS_CODE = "okeoke"
 
 # Authentication
 if "authenticated" not in st.session_state:
@@ -73,7 +73,7 @@ def get_patient_by_id(pid):
     return c.fetchone()
 
 def generate_share_link(pid):
-    return f"https://dental-jo4cwqzjgej7tpd6gisznf.streamlit.app/?pid={pid}"
+    return f"https://dentalyaska.streamlit.app/?pid={pid}"
 
 def load_and_process_image(path, target_height=400):
     img = Image.open(path)
