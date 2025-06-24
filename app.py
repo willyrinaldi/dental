@@ -264,11 +264,10 @@ def detail_page():
 
 
 
-    if st.button("⬅️ Kembali ke Daftar Pasien"):
-        st.session_state.page = "Daftar Pasien"
-        st.session_state.selected_patient = None
-        st.set_query_params(**{})  # Clear all query params, including pid
-        st.experimental_rerun()
+    st.markdown(
+        '<a href="https://dentalyaska.streamlit.app/"><button>⬅️ Kembali ke Daftar Pasien</button></a>',
+        unsafe_allow_html=True
+    )
 
 
 
