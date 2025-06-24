@@ -259,10 +259,12 @@ def detail_page():
 
 
     if st.button("⬅️ Kembali ke Daftar Pasien"):
-        st.session_state.page = "Daftar Pasien"
-        st.session_state.selected_patient = None
-        st.experimental_set_query_params(**{})  # explicitly reset params to empty dict
-        st.rerun()
+        st.markdown("""
+            <script>
+            window.location.href = "https://dentalyaska.streamlit.app/";
+            </script>
+        """, unsafe_allow_html=True)
+        st.stop()
 
 
 # Sidebar navigation (hide if using ?pid=)
