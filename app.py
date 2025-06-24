@@ -266,7 +266,7 @@ def detail_page():
     if st.button("⬅️ Kembali ke Daftar Pasien"):
         st.session_state.page = "Daftar Pasien"
         st.session_state.selected_patient = None
-        st.experimental_set_query_params()  # <-- hapus semua query params
+        st.set_query_params()  # <-- hapus semua query params
         st.rerun()
 
 
