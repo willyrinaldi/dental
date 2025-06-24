@@ -36,7 +36,8 @@ if "selected_patient" not in st.session_state:
 params = st.query_params
 
 def load_query_params():
-    params = st.experimental_get_query_params()
+    params = st.query_params
+
     if "pid" in params and st.session_state.selected_patient is None:
         try:
             pid = int(params["pid"][0])
